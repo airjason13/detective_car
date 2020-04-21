@@ -2,7 +2,7 @@
 #include "gpio.h"
 
 
-static int gpio_export(int pin)
+int gpio_export(int pin)
 {
 #define BUFFER_MAX 3
 	char buffer[BUFFER_MAX];
@@ -21,7 +21,7 @@ static int gpio_export(int pin)
 	return(0);
 }
 
-static int gpio_unexport(int pin)
+int gpio_unexport(int pin)
 {
 	char buffer[BUFFER_MAX];
 	ssize_t bytes_written;
@@ -39,7 +39,7 @@ static int gpio_unexport(int pin)
 	return(0);
 }
 
-static int gpio_direction(int pin, int dir)
+int gpio_direction(int pin, int dir)
 {
 	static const char s_directions_str[]  = "in\0out";
 
@@ -63,7 +63,7 @@ static int gpio_direction(int pin, int dir)
 	return(0);
 }
 
-static int gpio_read(int pin)
+int gpio_read(int pin)
 {
 #define VALUE_MAX 30
 	char path[VALUE_MAX];
@@ -87,7 +87,7 @@ static int gpio_read(int pin)
 	return(atoi(value_str));
 }
 
-static int gpio_write(int pin, int value)
+int gpio_write(int pin, int value)
 {
 	static const char s_values_str[] = "01";
 
@@ -111,7 +111,7 @@ static int gpio_write(int pin, int value)
 }
 
 
-int set_gpio_high(int gpio_num, int gpio_level){
+int set_gpio_level(int gpio_num, int gpio_level){
 	return gpio_write(gpio_num, gpio_level);	
 }
 

@@ -18,4 +18,4 @@
 #define GO_BACK_GPIO		23
 
 int init_gpio(int gpio_num, int gpio_dir, int gpio_level);
-int set_gpio_high(int gpio_num, int gpio_level);
+int set_gpio_level(int gpio_num, int gpio_level);
