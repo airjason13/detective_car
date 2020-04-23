@@ -9,18 +9,41 @@ int clientlen = 0;
 struct sockaddr_in broadcast_addr;
 int addr_len;
 
+#define TCP_SERV_PORT 5134
+
+char* get_wlan0_ipv4addr(void){
+	int fd;
+	struct ifreq ifr;
+
+ 	fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+ 	/* I want to get an IPv4 IP address */
+ 	ifr.ifr_addr.sa_family = AF_INET;
+ 	/* I want IP address attached to "wlan0" */
+ 	strncpy(ifr.ifr_name, "wlan0", IFNAMSIZ-1);
+
+ 	ioctl(fd, SIOCGIFADDR, &ifr);
+
+ 	close(fd);
+
+ 	/* display result */
+ 	printf("%s\n", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+ 	return inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr);
+}
 
 void broadcast_thread(void){
 	printf("ready to broadcsat!\n");
-	char *buf = "good to go!";
-	printf("strlen(buf) = %d\n", strlen(buf));	
+	char buf[1024] = {0};
+	sprintf(&buf, "server_ip:%s,port:%d", get_wlan0_ipv4addr(), 5134);
+	printf("buf : %s\n", buf );
 	while(1){
-		if((sendto(sockfd, buf, strlen(buf), 0, (struct sockaddr*)&broadcast_addr, (socklen_t)addr_len)) < 0){
+		if((sendto(sockfd, &buf, strlen(buf), 0, (struct sockaddr*)&broadcast_addr, (socklen_t)addr_len)) < 0){
 			
    			perror("sendto");
   	 		return -1;
-  		}
-		usleep(2); 
+  		}else{
+		}
+		sleep(2); 
 	}
 }
 

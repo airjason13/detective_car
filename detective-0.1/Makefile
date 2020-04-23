@@ -42,5 +42,6 @@ all:
 clean:
 	$(MAKE) -C $(GPIOLIB_DIR) -f $(GPIOLIB).mk clean
 	$(MAKE) -C $(TCPSERVERLIB_DIR) -f $(TCPSERVERLIB).mk clean
+	$(MAKE) -C $(UDPSOCKETLIB_DIR) -f $(UDPSOCKETLIB).mk clean
 	$(MAKE) -C $(APP_DIR) -f $(APP).mk clean
 	
