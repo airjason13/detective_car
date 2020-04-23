@@ -10,13 +10,49 @@ void tcp_test(char *data){
 	printf("data = %s\n", data);
 }
 
+
+void motor_forward(void){
+	set_gpio_level(GO_BACK_GPIO, 0);
+	set_gpio_level(GO_AHEAD_GPIO, 1);
+}
+void motor_backward(void){
+	set_gpio_level(GO_AHEAD_GPIO, 0);
+	set_gpio_level(GO_BACK_GPIO, 1);
+}
+void motor_forward_stop(void){
+	set_gpio_level(GO_BACK_GPIO, 0);
+	set_gpio_level(GO_AHEAD_GPIO, 0);
+}
+void motor_left(void){
+	set_gpio_level(TURN_RIGHT_GPIO, 0);
+	set_gpio_level(TURN_LEFT_GPIO, 1);
+}
+void motor_right(void){
+	set_gpio_level(TURN_LEFT_GPIO, 0);
+	set_gpio_level(TURN_RIGHT_GPIO, 1);
+}
+void motor_direct_stop(void){
+	set_gpio_level(TURN_LEFT_GPIO, 0);
+	set_gpio_level(TURN_RIGHT_GPIO, 0);
+}
+
 void tcp_recv_data(char *data){
 	printf("%s\n", __func__);
 	printf("data = %s\n", data);
-	
+	if(!strcmp(data,"forward")){
+		motor_forward();
+	}else if(!strcmp(data,"backward")){
+		motor_backward();
+	}else if(!strcmp(data,"forward_stop")){
+		motor_forward_stop();
+	}else if(!strcmp(data,"left")){
+		motor_left();
+	}else if(!strcmp(data,"right")){
+		motor_right();
+	}else if(!strcmp(data,"direct_stop")){
+		motor_direct_stop();
+	}	
 }
-
-
 int main(int argc, char **argv)
 {
 	pthread_t tcp_tid = NULL;
