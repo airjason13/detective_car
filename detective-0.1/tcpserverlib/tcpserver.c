@@ -83,27 +83,35 @@ void tcp_thread(void){
 		printf("tcpserver accept ok!\n");
 	}
 
+	callbacks[CALLBACK_TCP_GET_CLIENT_IPV4](inet_ntoa(client_addr.sin_addr));
 	printf("tcpserver ready to read commands!\n");
  	
 	while (1) {
+		memset(buf, 0x00, BUFSIZ);
   		if ((nbytes = read(recfd, &buf, BUFSIZ)) < 0) {
    			perror("read of data error nbytes !");
   			close(recfd);
-   			exit (1);
+   			break;
   		}
-   
-  		/*printf("Create socket #%d form %s : %d\n", recfd,
-  		inet_ntoa(client_addr.sin_addr), htons(client_addr.sin_port));*/
- 	 	printf("%s\n", &buf);
+   		printf("read nbytes : %d\n", nbytes);	
+		if(nbytes > 0){
+  			/*printf("Create socket #%d form %s : %d\n", recfd,
+  			inet_ntoa(client_addr.sin_addr), htons(client_addr.sin_port));*/
+ 	 		printf("%s\n", &buf);
 	
-		callbacks[CALLBACK_TCP_RECV_MSG](&buf);
+			callbacks[CALLBACK_TCP_RECV_MSG](&buf);
  
-  		/* return to client */
-		sprintf(&buf, "ok\n");
-  		if (write(recfd, &buf, nbytes) == -1) {
-   			perror ("write to client error");
-   			exit(1);
-  		}
+  			/* return to client */
+			sprintf(&buf, "ok\n");
+  			if (write(recfd, &buf, nbytes) == -1) {
+   				perror ("write to client error");
+   				break;
+  			}
+		}else if(nbytes == 0){
+			
+  			close(recfd);
+			break;
+		}
  	}
   	close(recfd);
 }
