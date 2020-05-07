@@ -5,10 +5,18 @@
 #include "../udpsocketlib/udpsocket.h"
 
 
+pthread_t main_tcp_tid = NULL;
+pthread_t main_udp_tid = NULL;
 
 void tcp_test(char *data){
 	printf("%s\n", __func__);
 	printf("data = %s\n", data);
+}
+
+void tcp_disconnect_notify(char *data){
+	printf("%s\n", __func__);
+	//pthread_cancel(main_tcp_tid);
+	main_tcp_tid = create_tcp_server(0);
 }
 
 void get_tcp_client_ip(char *client_ipv4){
@@ -47,8 +55,6 @@ void motor_direct_stop(void){
 void tcp_recv_data(char *data){
 	printf("%s\n", __func__);
 	printf("data = %s\n", data);
-	//motor_forward();
-#if 1
 	if(!strcmp(data,"forward")){
 		motor_forward();
 	}else if(!strcmp(data,"backward")){
@@ -62,13 +68,9 @@ void tcp_recv_data(char *data){
 	}else if(!strcmp(data,"direct_stop")){
 		motor_direct_stop();
 	}	
-#endif
 }
 int main(int argc, char **argv)
 {
-	pthread_t tcp_tid = NULL;
-	pthread_t udp_tid = NULL;
-	
 	printf("detective car is activited!\n");
 	init_gpio(TURN_RIGHT_GPIO, 1, 0);
 	init_gpio(TURN_LEFT_GPIO, 1, 0);
@@ -79,10 +81,11 @@ int main(int argc, char **argv)
 	register_tcp(CALLBACK_TCP_RECV_MSG,&tcp_recv_data);
 	register_tcp(CALLBACK_TCP_GET_CLIENT_IPV4,&get_tcp_client_ip);
 	register_tcp(CALLBACK_TCP_TEST,&tcp_test);
+	register_tcp(CALLBACK_TCP_DISCONNECT,&tcp_disconnect_notify);
 
 
-	udp_tid = startUDPBroadcast(8000);
-	tcp_tid = create_tcp_server(0);
+	main_udp_tid = startUDPBroadcast(8000);
+	main_tcp_tid = create_tcp_server(0);
 	while(1){
 		sleep(2);
 	}

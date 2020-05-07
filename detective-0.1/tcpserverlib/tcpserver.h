@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 #include <sys/errno.h>
 #include <pthread.h>
-
+#include <stdbool.h>
 typedef void (*callback_t)(char*);
 
 #define CALLBACK_TCP_RECV_MSG   	0

@@ -28,6 +28,22 @@ void register_tcp(int func_num, callback_t callback){
 	callbacks[func_num] = callback;
 }
 
+void split(char *src,const char *separator,char **dest,int *num) {
+     char *pNext;
+     int count = 0;
+     if (src == NULL || strlen(src) == 0)  
+        return;
+     if (separator == NULL || strlen(separator) == 0)  
+        return;
+     pNext = (char *)strtok(src,separator); 
+     while(pNext != NULL) {
+          *dest++ = pNext;
+          ++count;
+         pNext = (char *)strtok(NULL,separator); 
+    }  
+    *num = count;
+} 	
+
 void tcp_thread(void){
 	int socket_fd;      /* file description into transport */
  	int recfd;     /* file descriptor to accept        */
@@ -36,6 +52,10 @@ void tcp_thread(void){
  	char buf[BUFSIZ];
  	struct sockaddr_in myaddr; /* address of this service */
  	struct sockaddr_in client_addr; /* address of client    */
+	int link_state = 0;
+	bool running = true;
+	char *splitbuf[8] = {0};
+	int cmd_num = 0;
 	printf("%s\n", __func__);
 	/*                             
  	*      Get a socket into TCP/IP
@@ -69,51 +89,62 @@ void tcp_thread(void){
   		perror ("listen failed");
  		 exit(1);
  	}
-	/*
- 	* Loop continuously, waiting for connection requests
- 	* and performing the service
- 	*/
- 	length = sizeof(client_addr);
- 	printf("Server is ready to receive !!\n");
- 	printf("Can strike Cntrl-c to stop Server >>\n");
-  	if ((recfd = accept(socket_fd, (struct sockaddr_in *)&client_addr, &length)) <0) {
-   		perror ("could not accept call");
-   		exit(1);
-         }else{
-		printf("tcpserver accept ok!\n");
-	}
+	while (running) {
+		switch(link_state){
+			case 0:
+				/*
+ 				* Loop continuously, waiting for connection requests
+ 				* and performing the service
+ 				*/
+ 				length = sizeof(client_addr);
+ 				printf("Server is ready to receive !!\n");
+ 				printf("Can strike Cntrl-c to stop Server >>\n");
+  				if ((recfd = accept(socket_fd, (struct sockaddr_in *)&client_addr, &length)) <0) {
+   					perror ("could not accept call");
+   					running = false;
+         			}else{
+					printf("tcpserver accept ok!\n");
+					link_state = 1;
+					callbacks[CALLBACK_TCP_GET_CLIENT_IPV4](inet_ntoa(client_addr.sin_addr));
+					printf("tcpserver ready to read commands!\n");
+				}
 
-	callbacks[CALLBACK_TCP_GET_CLIENT_IPV4](inet_ntoa(client_addr.sin_addr));
-	printf("tcpserver ready to read commands!\n");
- 	
-	while (1) {
-		memset(buf, 0x00, BUFSIZ);
-  		if ((nbytes = read(recfd, &buf, BUFSIZ)) < 0) {
-   			perror("read of data error nbytes !");
-  			close(recfd);
-   			break;
-  		}
-   		printf("read nbytes : %d\n", nbytes);	
-		if(nbytes > 0){
-  			/*printf("Create socket #%d form %s : %d\n", recfd,
-  			inet_ntoa(client_addr.sin_addr), htons(client_addr.sin_port));*/
- 	 		printf("%s\n", &buf);
-	
-			callbacks[CALLBACK_TCP_RECV_MSG](&buf);
- 
-  			/* return to client */
-			sprintf(&buf, "ok\n");
-  			if (write(recfd, &buf, nbytes) == -1) {
-   				perror ("write to client error");
-   				break;
-  			}
-		}else if(nbytes == 0){
-			
-  			close(recfd);
+				
+ 			break;
+			case 1:
+				memset(buf, 0x00, BUFSIZ);
+  				if ((nbytes = read(recfd, &buf, BUFSIZ)) < 0) {
+   					perror("read of data error nbytes !");
+  					close(recfd);
+   					running = false;
+  				}
+   				printf("read nbytes : %d\n", nbytes);	
+				if(nbytes > 0){
+ 	 				printf("%s\n", &buf);	
+					split(buf, "\r\n", splitbuf, &cmd_num);
+					
+					for(int i = 0; i < cmd_num; i ++){	
+ 	 					printf("splitbuf[i] = %s\n", splitbuf[i]);	
+						callbacks[CALLBACK_TCP_RECV_MSG](splitbuf[i]);
+					}
+  					/* return to client */
+					sprintf(&buf, "ok\n");
+  					if (write(recfd, &buf, nbytes) == -1) {
+   						perror ("write to client error");
+   						running = false;
+  					}
+				}else if(nbytes == 0){
+  					//close(recfd);
+					//break;
+					link_state = 0;
+				}
 			break;
-		}
+			}
  	}
   	close(recfd);
+	close(socket_fd);
+	memset(buf, 0x00, BUFSIZ);
+	//callbacks[CALLBACK_TCP_DISCONNECT](&buf);
 }
 
 pthread_t create_tcp_server(int port){
