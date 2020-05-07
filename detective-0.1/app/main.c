@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <pthread.h>
+#include <signal.h>
 #include "../gpiolib/gpio.h"
 #include "../tcpserverlib/tcpserver.h"
 #include "../udpsocketlib/udpsocket.h"
@@ -7,6 +8,12 @@
 
 pthread_t main_tcp_tid = NULL;
 pthread_t main_udp_tid = NULL;
+
+void sig_handler(void){
+	printf("%s\n", __func__);
+	stop_tcp_server();
+	exit(0);
+}
 
 void tcp_test(char *data){
 	printf("%s\n", __func__);
@@ -27,30 +34,6 @@ void get_tcp_client_ip(char *client_ipv4){
 	system(gst_cmd);
 }
 
-void motor_forward(void){
-	set_gpio_level(GO_BACK_GPIO, 0);
-	set_gpio_level(GO_AHEAD_GPIO, 1);
-}
-void motor_backward(void){
-	set_gpio_level(GO_AHEAD_GPIO, 0);
-	set_gpio_level(GO_BACK_GPIO, 1);
-}
-void motor_forward_stop(void){
-	set_gpio_level(GO_BACK_GPIO, 0);
-	set_gpio_level(GO_AHEAD_GPIO, 0);
-}
-void motor_left(void){
-	set_gpio_level(TURN_RIGHT_GPIO, 0);
-	set_gpio_level(TURN_LEFT_GPIO, 1);
-}
-void motor_right(void){
-	set_gpio_level(TURN_LEFT_GPIO, 0);
-	set_gpio_level(TURN_RIGHT_GPIO, 1);
-}
-void motor_direct_stop(void){
-	set_gpio_level(TURN_LEFT_GPIO, 0);
-	set_gpio_level(TURN_RIGHT_GPIO, 0);
-}
 
 void tcp_recv_data(char *data){
 	printf("%s\n", __func__);
@@ -71,12 +54,15 @@ void tcp_recv_data(char *data){
 }
 int main(int argc, char **argv)
 {
+	
 	printf("detective car is activited!\n");
+	
+	signal(SIGINT, sig_handler);
+
 	init_gpio(TURN_RIGHT_GPIO, 1, 0);
 	init_gpio(TURN_LEFT_GPIO, 1, 0);
 	init_gpio(GO_AHEAD_GPIO, 1, 0);
 	init_gpio(GO_BACK_GPIO, 1, 0);
-//	set_gpio_level(TURN_RIGHT_GPIO, 1);
 	
 	register_tcp(CALLBACK_TCP_RECV_MSG,&tcp_recv_data);
 	register_tcp(CALLBACK_TCP_GET_CLIENT_IPV4,&get_tcp_client_ip);

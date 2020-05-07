@@ -7,6 +7,7 @@
 #define MAXNAME 1024
 
 pthread_t tcp_tid = NULL;
+bool running = true;
 
 extern int errno;
 
@@ -15,6 +16,8 @@ static int real_server_port;
 static callback_t callbacks[CALLBACK_MAX] = {NULL};
 
 static size_t n = 0;
+int socket_fd;      /* file description into transport */
+int recfd;     /* file descriptor to accept        */
 
 void register_tcp(int func_num, callback_t callback){
 	printf("%s\n", __func__);
@@ -45,18 +48,22 @@ void split(char *src,const char *separator,char **dest,int *num) {
 } 	
 
 void tcp_thread(void){
-	int socket_fd;      /* file description into transport */
- 	int recfd;     /* file descriptor to accept        */
+	//int socket_fd;      /* file description into transport */
+ 	//int recfd;     /* file descriptor to accept        */
  	int length;     /* length of address structure      */
  	int nbytes;     /* the number of read **/
  	char buf[BUFSIZ];
  	struct sockaddr_in myaddr; /* address of this service */
  	struct sockaddr_in client_addr; /* address of client    */
 	int link_state = 0;
-	bool running = true;
+	//bool running = true;
 	char *splitbuf[8] = {0};
 	int cmd_num = 0;
 	printf("%s\n", __func__);
+
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+
 	/*                             
  	*      Get a socket into TCP/IP
  	*/
@@ -90,6 +97,7 @@ void tcp_thread(void){
  		 exit(1);
  	}
 	while (running) {
+		pthread_testcancel();
 		switch(link_state){
 			case 0:
 				/*
@@ -140,6 +148,7 @@ void tcp_thread(void){
 				}
 			break;
 			}
+			pthread_testcancel();
  	}
   	close(recfd);
 	close(socket_fd);
@@ -148,7 +157,10 @@ void tcp_thread(void){
 }
 
 pthread_t create_tcp_server(int port){
-
+	
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	printf("%s\n", __func__);	
 	callbacks[CALLBACK_TCP_TEST]("test");
 	if(port < 1024){
@@ -161,4 +173,12 @@ pthread_t create_tcp_server(int port){
 	pthread_create(&tcp_tid, NULL, tcp_thread, NULL);
 	return tcp_tid;
 	
+}
+
+void stop_tcp_server(void){
+	printf("%s\n", __func__);
+	running = false;
+	pthread_cancel(tcp_tid);
+  	close(recfd);
+	close(socket_fd);
 }

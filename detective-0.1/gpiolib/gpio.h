@@ -19,3 +19,10 @@
 
 int init_gpio(int gpio_num, int gpio_dir, int gpio_level);
 int set_gpio_level(int gpio_num, int gpio_level);
+
+void motor_forware(void);
+void motor_backward(void);
+void motor_forward_stop(void);
+void motor_left(void);
+void motor_right(void);
+void motor_direct_stop(void);

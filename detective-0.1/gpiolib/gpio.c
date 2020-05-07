@@ -123,4 +123,28 @@ int init_gpio(int gpio_num, int gpio_dir, int gpio_level){
 	
 	return 0;	
 }
+void motor_forward(void){
+        set_gpio_level(GO_BACK_GPIO, 0);
+        set_gpio_level(GO_AHEAD_GPIO, 1);
+}
+void motor_backward(void){
+        set_gpio_level(GO_AHEAD_GPIO, 0);
+        set_gpio_level(GO_BACK_GPIO, 1);
+}
+void motor_forward_stop(void){
+        set_gpio_level(GO_BACK_GPIO, 0);
+        set_gpio_level(GO_AHEAD_GPIO, 0);
+}
+void motor_left(void){
+        set_gpio_level(TURN_RIGHT_GPIO, 0);
+        set_gpio_level(TURN_LEFT_GPIO, 1);
+}
+void motor_right(void){
+         set_gpio_level(TURN_LEFT_GPIO, 0);
+         set_gpio_level(TURN_RIGHT_GPIO, 1);
+}
+void motor_direct_stop(void){
+         set_gpio_level(TURN_LEFT_GPIO, 0);
+         set_gpio_level(TURN_RIGHT_GPIO, 0);
+}
 
